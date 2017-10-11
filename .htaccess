@@ -1,0 +1,81 @@
+<IfModule mod_rewrite.c>
+
+RewriteEngine On
+
+## Begin RewriteBase
+# If you are getting 500 or 404 errors on subpages, you may have to uncomment the RewriteBase entry
+# You should change the '/' to your appropriate subfolder. For example if you have
+# your Grav install at the root of your site '/' should work, else it might be something
+# along the lines of: RewriteBase /<your_sub_folder>
+##
+
+# RewriteBase /
+RewriteCond %{SERVER_PORT} 80
+#
+RewriteRule ^(.*)$ https://www.bytii.net/$1 [R,L]
+#
+
+# Disable the server signature
+ServerSignature Off
+
+# Does browser explicitly support webp?
+RewriteCond %{HTTP_USER_AGENT} Chrome [OR]
+
+# OR Is request from Page Speed
+RewriteCond %{HTTP_USER_AGENT} "Google Page Speed Insights" [OR]
+
+# OR does this browser explicitly support webp
+RewriteCond %{HTTP_ACCEPT} image/webp [OR]
+
+# AND does a webp image exists?
+RewriteCond %{DOCUMENT_ROOT}/$1\.webp -f
+
+# THEN send the webp image and set the env var webp
+RewriteRule (.+)\.(?:jpe?g)$ $1.webp [NC,T=image/webp,E=webp,L]
+
+# If REDIRECT_webp env var exists, append Accept to the Vary header
+Header append Vary Accept env=REDIRECT_webp
+
+# Limit bandwidth consumption
+<ifmodule mod_php5.c>
+php_value zlib.output_compression 16386
+</ifmodule>
+
+<IfModule mod_headers.c>
+<FilesMatch ".(js|css|xml|gz|html)$">
+Header append Vary: Accept-Encoding
+</FilesMatch>
+</IfModule>
+
+ErrorDocument 404 /404.html
+
+## EXPIRES CACHING ##
+<IfModule mod_expires.c>
+ExpiresActive On
+ExpiresByType image/jpg "access 1 year"
+ExpiresByType image/jpeg "access 1 year"
+ExpiresByType image/gif "access 1 year"
+ExpiresByType image/png "access 1 year"
+ExpiresByType text/css "access 1 month"
+ExpiresByType text/html "access 1 month"
+ExpiresByType application/pdf "access 1 month"
+ExpiresByType text/x-javascript "access 1 month"
+ExpiresByType application/x-shockwave-flash "access 1 month"
+ExpiresByType image/x-icon "access 1 year"
+ExpiresDefault "access 1 month"
+</IfModule>
+## EXPIRES CACHING ##
+
+<IfModule pagespeed_module>
+  ModPagespeed off
+  ModPagespeedEnableFilters rewrite_css,combine_css
+  ModPagespeedEnableFilters recompress_images
+  ModPagespeedEnableFilters convert_png_to_jpeg
+  ModPagespeedEnableFilters collapse_whitespace,remove_comments
+</IfModule>
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# NOTE this account's php is controlled via FPM and the vhost, this is a place holder.
+# Do not edit. This next line is to support the cPanel php wrapper (php_cli).
+# AddType application/x-httpd-ea-php70 .php .phtml
+# php -- END cPanel-generated handler, do not edit
